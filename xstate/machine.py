@@ -50,7 +50,7 @@ class Machine:
             elif callable(action.type):
                 result.append(action.type)
             else:
-                errors.append("No '{}' action".format(action.type))
+                errors.append(f"No '{action.type}' action")
         return result, errors
 
     def state_from(self, state_value) -> State:

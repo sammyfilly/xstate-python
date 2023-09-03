@@ -63,6 +63,5 @@ if __name__ == "__main__":
         cacheopts={"use_cache": False},
     )[0]
 
-    file1 = open("test.svg", "w")
-    file1.write(output.decode("utf-8"))
-    file1.close()
+    with open("test.svg", "w") as file1:
+        file1.write(output.decode("utf-8"))

@@ -38,9 +38,9 @@ class StateNode:
         self.config = config
         self.parent = parent
         self.id = (
-            config.get("id", parent.id + "." + key)
+            config.get("id", f"{parent.id}.{key}")
             if parent
-            else config.get("id", machine.id + "." + key)
+            else config.get("id", f"{machine.id}.{key}")
         )
         self.entry = (
             [self.get_actions(entry_action) for entry_action in config.get("entry")]
@@ -98,30 +98,25 @@ class StateNode:
 
     @property
     def initial(self):
-        initial_key = self.config.get("initial")
-
-        if not initial_key:
-            if self.type == "compound":
-                return Transition(
-                    next(iter(self.states.values())), source=self, event=None, order=-1
-                )
-        else:
+        if initial_key := self.config.get("initial"):
             return Transition(
                 self.states.get(initial_key), source=self, event=None, order=-1
+            )
+        if self.type == "compound":
+            return Transition(
+                next(iter(self.states.values())), source=self, event=None, order=-1
             )
 
     def _get_relative(self, target: str) -> "StateNode":
         if target.startswith("#"):
             return self.machine._get_by_id(target[1:])
 
-        state_node = self.parent.states.get(target)
-
-        if not state_node:
+        if state_node := self.parent.states.get(target):
+            return state_node
+        else:
             raise ValueError(
                 f"Relative state node '{target}' does not exist on state node '#{self.id}'"  # noqa
             )
-
-        return state_node
 
     def __repr__(self) -> str:
         return "<StateNode %s>" % repr({"id": self.id})

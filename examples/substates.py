@@ -42,7 +42,7 @@ if __name__ == "__main__":
     print(state.value)
     time.sleep(0.5)
 
-    for i in range(10):
+    for _ in range(10):
         state = lights.transition(state, "TIMER")
         print(state.value)
         time.sleep(0.5)
