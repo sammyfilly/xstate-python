@@ -102,17 +102,16 @@ def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify fun
                     default_history_content=default_history_content,
                     history_value=history_value,
                 )
-        else:
-            if is_parallel_state(state):
-                for child in get_child_states(state):
-                    if not any([is_descendent(s, child) for s in states_to_enter]):
-                        add_descendent_states_to_enter(
-                            child,
-                            states_to_enter=states_to_enter,
-                            states_for_default_entry=states_for_default_entry,
-                            default_history_content=default_history_content,
-                            history_value=history_value,
-                        )
+        elif is_parallel_state(state):
+            for child in get_child_states(state):
+                if not any(is_descendent(s, child) for s in states_to_enter):
+                    add_descendent_states_to_enter(
+                        child,
+                        states_to_enter=states_to_enter,
+                        states_for_default_entry=states_for_default_entry,
+                        default_history_content=default_history_content,
+                        history_value=history_value,
+                    )
 
 
 def is_history_state(state: StateNode) -> bool:
@@ -147,7 +146,7 @@ def get_transition_domain(
     elif (
         transition.type == "internal"
         and is_compound_state(transition.source)
-        and all([is_descendent(s, state2=transition.source) for s in tstates])
+        and all(is_descendent(s, state2=transition.source) for s in tstates)
     ):
         return transition.source
     else:
@@ -156,7 +155,7 @@ def get_transition_domain(
 
 def find_lcca(state_list: List[StateNode]):
     for anc in get_proper_ancestors(state_list[0], state2=None):
-        if all([is_descendent(s, state2=anc) for s in state_list[1:]]):
+        if all(is_descendent(s, state2=anc) for s in state_list[1:]):
             return anc
 
 
@@ -193,7 +192,9 @@ def add_ancestor_states_to_enter(
         states_to_enter.add(anc)
         if is_parallel_state(anc):
             for child in get_child_states(anc):
-                if not any([is_descendent(s, state2=child) for s in states_to_enter]):
+                if not any(
+                    is_descendent(s, state2=child) for s in states_to_enter
+                ):
                     add_descendent_states_to_enter(
                         child,
                         states_to_enter=states_to_enter,
@@ -221,10 +222,7 @@ def is_final_state(state_node: StateNode) -> bool:
 
 def is_parallel_state(state_node: StateNode) -> bool:
     # should return whether state_node.type is parallel
-    if state_node.type == "parallel":
-        return True
-    else:
-        return False
+    return state_node.type == "parallel"
 
 
 def get_child_states(state_node: StateNode) -> List[StateNode]:
@@ -234,10 +232,8 @@ def get_child_states(state_node: StateNode) -> List[StateNode]:
 def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
     if is_compound_state(state):
         return any(
-            [
-                is_final_state(s) and (s in configuration)
-                for s in get_child_states(state)
-            ]
+            is_final_state(s) and (s in configuration)
+            for s in get_child_states(state)
         )
     elif is_parallel_state(state):
         return all(is_in_final_state(s, configuration) for s in get_child_states(state))
@@ -416,9 +412,9 @@ def remove_conflicting_transitions(
                 configuration=configuration,
                 history_value=history_value,
             )
-            intersection = [value for value in t1_exit_set if value in t2_exit_set]
-
-            if intersection:
+            if intersection := [
+                value for value in t1_exit_set if value in t2_exit_set
+            ]:
                 if is_descendent(t1.source, t2.source):
                     transitions_to_remove.add(t2)
                 else:
@@ -578,17 +574,9 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
     child_state_nodes = adj_list.get(state_node.id)
 
     if is_compound_state(state_node):
-        child_state_node = list(child_state_nodes)[0]
-
-        if child_state_node:
-            if is_atomic_state(child_state_node):
-                return child_state_node.key
-        else:
+        if not (child_state_node := list(child_state_nodes)[0]):
             return {}
 
-    state_value = {}
-
-    for s in child_state_nodes:
-        state_value[s.key] = get_value_from_adj(s, adj_list)
-
-    return state_value
+        if is_atomic_state(child_state_node):
+            return child_state_node.key
+    return {s.key: get_value_from_adj(s, adj_list) for s in child_state_nodes}

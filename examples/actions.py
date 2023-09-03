@@ -50,11 +50,11 @@ lights = Machine(
 if __name__ == "__main__":
     state = lights.initial_state
 
-    for i in range(10):
+    for _ in range(10):
         # execute all the actions (before/exit states)
         for action in state.actions:
             action()
-        print("VALUE: {}".format(state.value))
+        print(f"VALUE: {state.value}")
 
         time.sleep(timing)
         state = lights.transition(state, "TIMER")
